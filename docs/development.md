@@ -28,3 +28,5 @@ The packaging script selects runtime files explicitly, synchronizes the companio
 The public source deliberately omits obsolete standalone controllers and tests tied to private device snapshots. Generic capture, directory, recovery, navigation, archive, specification, and browser checks remain available. Review [validation boundaries](validation.md) before interpreting a green run as support for an unfamiliar device.
 
 测试也可设置 `MANUALDOCK_CHROMIUM_EXECUTABLE` 指向已安装的测试用 Chromium。测试始终创建隔离的临时浏览器资料目录，不复用日常 Chrome 登录状态；未设置时使用 Playwright 默认浏览器。
+
+GitHub Actions 配置保留为 `ci/check.yml` 模板，默认未启用；具备工作流写入权限后可复制到 `.github/workflows/check.yml`。本地验收命令与模板一致。

@@ -55,3 +55,5 @@ python3 scripts/package_release.py
 ```
 
 See [development notes](docs/development.md) for architecture and test boundaries. Code is licensed under [MIT](LICENSE); the bundled YAML parser retains its [ISC license](extension/vendor/yaml.LICENSE.txt).
+
+An optional [GitHub Actions template](ci/check.yml) is included. Copy it to `.github/workflows/check.yml` to enable automated runs; this requires workflow-write permission. The template is not active by default.

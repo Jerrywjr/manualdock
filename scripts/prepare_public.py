@@ -23,7 +23,7 @@ PUBLIC_TESTS = (
     'universal.browser.integration.mjs',
 )
 SOURCE_FILES = (
-    '.gitignore', '.github/workflows/check.yml', 'package.json', 'package-lock.json',
+    '.gitignore', 'ci/check.yml', 'package.json', 'package-lock.json',
     'scripts/build-openapi-vendor.mjs', 'scripts/package_release.py',
     'scripts/prepare_public.py',
 )

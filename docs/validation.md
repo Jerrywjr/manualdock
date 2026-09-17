@@ -19,7 +19,7 @@ npm run test:browser
 python3 scripts/package_release.py
 ```
 
-上述命令是验收入口，结果应以本次运行的输出和 GitHub Actions 为准；本页不把尚未运行的检查记为通过。
+上述命令是验收入口，结果应以实际运行的输出为准；GitHub Actions 当前保留为未启用的模板，本页不把尚未运行的检查记为通过。
 
 | 检查范围 | 验证方式 | 不能由此推出 |
 |---|---|---|
