@@ -34,4 +34,4 @@ ManualDock 是一个本地 Chrome 扩展，附带可选的 AI-agent Skill。用�
 
 开发和复现命令见 [开发说明](docs/development.md)。项目代码采用 [MIT](LICENSE)，随附 YAML 解析库保留其 ISC 许可证。
 
-可选的 [GitHub Actions 模板](ci/check.yml) 已提供。将其复制为 `.github/workflows/check.yml` 可启用自动检查；此操作需要工作流写入权限，模板默认未启用。
+可选的 [GitHub Actions 模板](https://github.com/Jerrywjr/manualdock/blob/main/ci/check.yml) 已提供。将其复制为 `.github/workflows/check.yml` 可启用自动检查；此操作需要工作流写入权限，模板默认未启用。

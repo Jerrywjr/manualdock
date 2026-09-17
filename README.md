@@ -43,7 +43,7 @@ Import local Swagger 2.0 or OpenAPI 3.0/3.1 JSON/YAML, or specify a same-origin 
 
 ## Development
 
-Node.js 22 and Python 3 are used for tests and packaging; neither is needed to run the extension.
+Clone the GitHub source to develop or run tests; the install ZIP contains runtime files and usage instructions. Node.js 22 and Python 3 are used for tests and packaging; neither is needed to run the extension.
 
 ```sh
 npm ci
@@ -56,4 +56,4 @@ python3 scripts/package_release.py
 
 See [development notes](docs/development.md) for architecture and test boundaries. Code is licensed under [MIT](LICENSE); the bundled YAML parser retains its [ISC license](extension/vendor/yaml.LICENSE.txt).
 
-An optional [GitHub Actions template](ci/check.yml) is included. Copy it to `.github/workflows/check.yml` to enable automated runs; this requires workflow-write permission. The template is not active by default.
+An optional [GitHub Actions template](https://github.com/Jerrywjr/manualdock/blob/main/ci/check.yml) is included. Copy it to `.github/workflows/check.yml` to enable automated runs; this requires workflow-write permission. The template is not active by default.
