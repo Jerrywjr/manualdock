@@ -1,0 +1,31 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>ManualDock</title><link rel="stylesheet" href="panel.css"></head><body><main>
+<div class="eyebrow">ManualDock · 本地文档 · v0.2.0</div><h1>把设备文档带到本地</h1>
+<p class="intro">从已登录页面读取手册，或导入 API 规范文件。文档和配置保存在本机。</p><p id="connection" class="notice">正在连接原标签页…</p>
+<nav class="actions" aria-label="导入方式"><button data-mode="web" class="primary">网页手册</button><button data-mode="spec">API 规范</button><button data-mode="rotation">导航轮换</button><button data-mode="library">已保存任务</button></nav>
+<section class="settings"><label>产品名称<input id="product" placeholder="例如：防火墙管理手册" maxlength="120"></label><label>产品版本<input id="version" placeholder="未知" maxlength="80"></label></section>
+<section data-panel="web">
+<h2>识别与校准</h2><label>已保存规则<select id="profile-list"><option value="">自动识别当前页面</option></select></label>
+<p id="profile-status" role="status">正在识别目录和正文…</p>
+<div class="actions"><button id="detect">重新识别</button><button id="pick-toc">点选目录区域</button><button id="pick-content">点选正文区域</button></div>
+<p class="muted">点选时会切到原标签页。选中区域只记录位置，不触发原页面按钮；按 Esc 取消。</p>
+<details><summary>范围与识别规则</summary><label>手册路径范围<input id="scope" placeholder="/docs/"></label><label>目录区域<input id="toc-selector"></label><label>正文区域<input id="content-selector"></label><label>章节路由<select id="hash-mode"><option value="none">普通页面</option><option value="route"># 后内容标识章节</option><option value="anchor"># 后内容只是本页位置</option></select></label></details>
+<div class="actions"><button id="sample-a">点选示例章节 A</button><button id="sample-b">点选示例章节 B</button><button id="verify">验证两章并保存规则</button></div><p id="samples" class="muted">自动识别成功时，可直接开始；会先验证两个章节。</p>
+<div class="actions"><button id="export-profile">导出规则</button><label class="file-button">导入规则 JSON<input id="import-profile" type="file" accept=".json,application/json"></label></div>
+<div class="actions"><button id="start" class="primary">开始 / 继续导入</button><button id="pause" disabled>暂停</button><button id="scan">重新扫描目录</button><button id="retry">重试失败 / 待核对</button></div>
+<p id="retry-status" role="status" class="notice">自动恢复未运行。连接异常时每 3 分钟重试。</p>
+</section>
+<section data-panel="spec" hidden><h2>导入 API 规范</h2><p>支持 Swagger 2.0、OpenAPI 3.0/3.1 的 JSON/YAML。整理接口说明，不执行请求。</p>
+<label>本地规范文件<input id="spec-file" type="file" accept=".json,.yaml,.yml,application/json"></label><p>或读取原标签页同一网站上的规范文件：</p><label>规范文档 URL<input id="spec-url" type="url" placeholder="https://设备地址/docs/openapi.json"></label><button id="fetch-spec">读取规范文档</button><p id="spec-status" role="status"></p></section>
+<section data-panel="rotation" hidden><h2>让后台按顺序切换菜单</h2><p>在独立管理标签页自动识别主菜单，也可逐个点选；核对列表并试运行后保存。保留后台标签页，手册在另一个标签页采集。</p>
+<div class="actions"><button id="rotation-pick">添加一个导航菜单</button><button id="rotation-preset">自动识别当前主菜单</button><button id="rotation-clear">清空顺序</button></div><ol id="rotation-targets"></ol>
+<label>每次点击间隔（秒）<input id="rotation-interval" type="number" min="30" max="3600" value="60"></label>
+<div class="actions"><button id="rotation-trial">试运行所选顺序</button><button id="rotation-save" disabled>保存轮换规则</button><button id="rotation-start" class="primary">开始轮换</button><button id="rotation-stop">停止轮换</button></div><p id="rotation-status" role="status">默认关闭。尚未启动。</p>
+<div class="actions"><button id="rotation-export">导出轮换规则</button><label class="file-button">导入轮换规则<input id="rotation-import" type="file" accept=".json"></label></div>
+<p class="muted">只点选明确的导航菜单；找不到、出现歧义或刷新后台时停止。点击已执行不等于设备已续期。</p></section>
+<section data-panel="library" hidden><h2>已保存任务</h2><p>不同产品、版本、手册和配置分别保存，点击任务可查看与导出。</p><button id="refresh-library">刷新列表</button><ul id="task-list"></ul></section>
+<div id="status" role="status" aria-live="polite">准备就绪</div><div class="stats"><div><strong id="found">0</strong><span>已发现</span></div><div><strong id="captured">0</strong><span>已保存</span></div><div><strong id="remaining">0</strong><span>待处理</span></div><div><strong id="issues">0</strong><span>失败 / 待核对</span></div></div>
+<p class="muted">已发现数量不等于整本目录总数。无法访问的目录、内嵌页面和图片会在报告中列出。</p>
+<section class="export"><h2>导出已保存内容</h2><div class="actions"><button data-export="markdown" disabled>Markdown</button><button data-export="html" disabled>离线 HTML</button><button data-export="json" disabled>完整 JSON</button><button data-export="report" disabled>采集报告</button></div></section>
+<details open><summary>正文预览</summary><pre id="preview">尚未读取</pre></details><details><summary>已发现章节</summary><ol id="chapters"></ol></details><details><summary>目录与异常提示</summary><pre id="diagnostics"></pre></details><p id="error" role="alert"></p>
+<footer>账号密码由你在原网站输入。扩展不读取登录凭据、不执行 API 示例、不上传文档。自动恢复期间请保留控制页。关闭控制页会停止采集，重新打开原标签页的控制页后可恢复等待计划；已保存进度保留。后台轮换请用停止按钮结束。</footer>
+</main><script type="module" src="panel.js"></script></body></html>

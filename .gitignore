@@ -1,0 +1,17 @@
+node_modules/
+__pycache__/
+*.py[cod]
+.DS_Store
+*.zip
+.manualdock-export.json
+playwright-report/
+test-results/
+docs/*.json
+docs/*.txt
+docs/*.png
+docs/*.diff
+internal/
+*.log
+.env
+.env.*
+!.env.example

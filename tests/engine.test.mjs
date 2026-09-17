@@ -1,0 +1,58 @@
+import test from 'node:test';import assert from 'node:assert/strict';
+import {createTask, ImportEngine} from '../extension/engine.js';
+import {resetRetryableChapters,taskHasRetryableWork} from '../extension/recovery.js';
+const p={schemaVersion:1,id:'p',revision:1,adapterId:'generic',entry:'https://m.test/docs/index',origin:'https://m.test',pathPrefix:'/docs',queryKeys:[],hashMode:'route',tocSelector:'nav',contentSelector:'main',navigation:'links'};
+const links=Array.from({length:1200},(_,i)=>({url:`https://m.test/docs/chapter-${i}`,title:`chapter ${i}`}));
+function ioFor(task,onChange=()=>{}){return {discover:async()=>({items:links,warnings:[]}),capture:async chapter=>({status:'ok',url:chapter.url,title:chapter.title,text:'body '+chapter.title,markdown:'body '+chapter.title,html:'<p>body</p>',links:[],warnings:[],diagnostics:{},navigationProof:{verified:true,kind:'url'}}),save:async()=>{},onChange};}
+test('1200 path chapters survive pause, snapshot and resume without recapturing old pages',async()=>{
+ const task=createTask(p,'IPS','1');let engine;engine=new ImportEngine(task,ioFor(task,()=>{if(Object.keys(task.pages).length===200)engine.pause();}));
+ await engine.run();assert.equal(Object.keys(task.pages).length,200);assert.equal(task.status,'paused');
+ const restored=JSON.parse(JSON.stringify(task));const old=JSON.stringify(restored.pages);let calls=0;
+ const io=ioFor(restored);const capture=io.capture;io.capture=async c=>{calls++;return capture(c);};
+ await new ImportEngine(restored,io).run();assert.equal(calls,1000);assert.equal(Object.keys(restored.pages).length,1200);
+ assert.equal(JSON.stringify(Object.fromEntries(Object.entries(restored.pages).slice(0,200))),old);
+});
+test('unverified content is never captured and three failures pause',async()=>{
+ const task=createTask(p,'IPS','1'),io=ioFor(task);io.capture=async c=>({status:'ok',url:c.url,text:'stale',navigationProof:{verified:false}});
+ await new ImportEngine(task,io).run();assert.equal(task.status,'paused');assert.equal(task.queue.filter(c=>c.status==='failed').length,3);assert.equal(Object.keys(task.pages).length,0);
+});
+test('authentication expiration pauses and resumes the same chapter',async()=>{
+ const task=createTask(p,'IPS','1'),io=ioFor(task);io.discover=async()=>({items:links.slice(0,2)});const real=io.capture;io.capture=async()=>({status:'auth'});
+ await new ImportEngine(task,io).run();assert.equal(task.status,'waiting_login');io.capture=real;
+ await new ImportEngine(task,io).run();assert.equal(task.queue.filter(c=>c.status==='captured').length,2);
+});
+test('same-url tree chapters stay distinct and identical bodies remain reviewable',async()=>{
+ const task=createTask(p,'IPS','1'),io=ioFor(task);io.discover=async()=>({items:['A','B'].map(title=>({url:p.entry,title,locator:{kind:'generic-toc',path:[title]}}))});
+ io.capture=async c=>({status:'ok',url:c.url,text:'same body',navigationProof:{verified:true}});
+ await new ImportEngine(task,io).run();assert.equal(Object.keys(task.pages).length,2);assert.equal(task.queue[1].status,'review');
+});
+
+test('image-only chapters require embedded image evidence and preserve distinct content hashes',async()=>{
+ const task=createTask(p,'IPS','1'),io=ioFor(task);io.discover=async()=>({items:links.slice(0,3)});
+ io.capture=async c=>({status:'ok',url:c.url,text:'',html:`<img src="data:image/png;base64,${c.title==='chapter 0'?'AAAA':'BBBB'}">`,diagnostics:{images:{embedded:c.title==='chapter 2'?0:1}},navigationProof:{verified:true}});
+ await new ImportEngine(task,io).run();assert.equal(Object.keys(task.pages).length,2);assert.deepEqual(task.queue.map(c=>c.status),['captured','captured','failed']);
+ assert.notEqual(...Object.values(task.pages).map(p=>p.hash));
+});
+
+test('network interruption saves good chapters and an automatic retry resumes only failed or pending work',async()=>{
+ const task=createTask(p,'IPS','1'),io=ioFor(task);io.discover=async()=>({items:links.slice(0,5)});const capture=io.capture;let online=false,calls=[];
+ io.capture=async c=>{calls.push(c.key);if(!online&&c.title!=='chapter 0')throw new TypeError('Failed to fetch');return capture(c);};
+ await new ImportEngine(task,io).run();assert.equal(task.status,'paused');assert.equal(task.recovery.reason,'network');assert.equal(taskHasRetryableWork(task),true);assert.equal(Object.keys(task.pages).length,1);
+ const saved=JSON.stringify(task.pages),first=task.queue[0].key;online=true;calls=[];assert.equal(resetRetryableChapters(task),3);
+ await new ImportEngine(task,io).run();assert.equal(task.status,'finished');assert.equal(calls.includes(first),false);assert.equal(Object.keys(task.pages).length,5);assert.equal(JSON.stringify({[first]:task.pages[first]}),saved);assert.equal(taskHasRetryableWork(task),false);
+});
+test('a transient discovery failure is recoverable before the first chapter has been found',async()=>{
+ const task=createTask(p),io=ioFor(task);io.discover=async()=>{throw new Error('net::ERR_CONNECTION_RESET');};
+ await assert.rejects(new ImportEngine(task,io).run(),/ERR_CONNECTION_RESET/);assert.equal(task.recovery.retryable,true);assert.equal(taskHasRetryableWork(task),true);
+});
+test('calibration and navigation proof failures never become automatic retry work',async()=>{
+ const task=createTask(p),io=ioFor(task);io.capture=async()=>({status:'ok',text:'stale',navigationProof:{verified:false}});
+ await new ImportEngine(task,io).run();assert.equal(task.recovery.retryable,false);assert.equal(taskHasRetryableWork(task),false);assert.equal(resetRetryableChapters(task),0);
+});
+
+test('an invalid directory is not silently ignored when an older queue already exists',async()=>{
+ const task=createTask(p),io=ioFor(task);let captures=0;
+ io.discover=async()=>({items:links.slice(0,2)});await new ImportEngine(task,io).scan();
+ io.discover=async()=>({items:[],warnings:['目录定位器失效'],diagnostics:{reason:'invalid-directory'}});io.capture=async()=>{captures++;throw new Error('must not run');};
+ await assert.rejects(new ImportEngine(task,io).run(),/目录定位器失效/);assert.equal(captures,0);assert.equal(task.recovery.retryable,false);
+});

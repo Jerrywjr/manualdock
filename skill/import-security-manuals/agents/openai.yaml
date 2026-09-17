@@ -1,0 +1,4 @@
+interface:
+  display_name: "ManualDock"
+  short_description: "校准并导入已登录设备手册或 API 规范，保存本地档案并按章节检索"
+  default_prompt: "使用 $import-security-manuals 导入这份设备手册或 API 规范，核对章节来源与缺口并导出本地档案。"
